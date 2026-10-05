@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Inner Well-Being Self-Evaluation</title>
+<style>
+:root{--bg:#f6f8fc;--card:#fff;--tx:#14213d;--mut:#5b6785;--ac:#1e6fd9;--gold:#c9a227;--bd:#dde3ef;--lo:#d9534f;--mid:#e5a623;--hi:#2e9e6b;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1424;--card:#172038;--tx:#e8ecf8;--mut:#9aa6c4;--bd:#2a3556;--ac:#5aa0ff}}
+:root[data-theme="dark"]{--bg:#0e1424;--card:#172038;--tx:#e8ecf8;--mut:#9aa6c4;--bd:#2a3556;--ac:#5aa0ff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.5}
+main{max-width:760px;margin:0 auto;padding:20px 16px 60px}
+h1{font-size:1.5rem;margin:.2em 0}h2{font-size:1.15rem;margin:1.2em 0 .4em}
+.sub{color:var(--mut);margin:0 0 16px}
+.bar{height:3px;width:80px;background:var(--gold);margin:8px 0 14px;border-radius:2px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:16px;margin:12px 0}
+.note{font-size:.85rem;color:var(--mut)}
+label.f{display:block;font-size:.9rem;margin:6px 0 2px}
+input[type=text]{width:100%;padding:10px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--tx);font-size:1rem}
+.dim{font-size:.75rem;letter-spacing:.06em;text-transform:uppercase;color:var(--ac);font-weight:700}
+.q{margin:0 0 10px;font-weight:500}
+.scale{display:flex;gap:6px}
+.scale label{flex:1;text-align:center;border:1px solid var(--bd);border-radius:8px;padding:8px 0;cursor:pointer;font-size:.95rem}
+.scale input{position:absolute;opacity:0;pointer-events:none}
+.scale label.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.ends{display:flex;justify-content:space-between;font-size:.72rem;color:var(--mut);margin-top:4px}
+button{background:var(--ac);color:#fff;border:0;border-radius:10px;padding:12px 20px;font-size:1rem;cursor:pointer;margin-top:8px}
+button.sec{background:transparent;color:var(--ac);border:1px solid var(--ac)}
+button:disabled{opacity:.5}
+.prog{height:6px;background:var(--bd);border-radius:3px;overflow:hidden;position:sticky;top:env(safe-area-inset-top,0px)}
+.prog i{display:block;height:100%;width:0;background:var(--gold);transition:width .2s}
+.row{display:flex;align-items:center;gap:10px;margin:10px 0}
+.row .n{width:110px;font-weight:600;font-size:.9rem}
+.row .t{flex:1;height:12px;background:var(--bd);border-radius:6px;overflow:hidden}
+.row .t i{display:block;height:100%}
+.row .s{width:64px;text-align:right;font-size:.85rem;color:var(--mut)}
+.pill{display:inline-block;padding:2px 10px;border-radius:99px;font-size:.78rem;color:#fff;font-weight:600}
+.lo{background:var(--lo)}.mid{background:var(--mid)}.hi{background:var(--hi)}
+svg{max-width:100%;height:auto}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;font-size:.82rem;width:100%}th,td{border-bottom:1px solid var(--bd);padding:6px 8px;text-align:center;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+.hide{display:none}
+</style>
+</head>
+<body>
+<main>
+<div id="intro">
+  <h1>Dimensions of Inner Well-Being</h1>
+  <div class="bar"></div>
+  <p class="sub">A short self-reflection after the lecture. Answer honestly: there are no right or wrong answers, and this is not a diagnosis.</p>
+  <div class="card">
+    <label class="f" for="nm">Name or student ID (optional)</label>
+    <input type="text" id="nm" maxlength="60" autocomplete="off">
+    <p class="note">Your answers are shown to you instantly. If you submit, your scores are also sent to the facilitator.</p>
+  </div>
+  <div class="prog"><i id="pg"></i></div>
+  <div id="qs"></div>
+  <p class="note" id="err" style="color:var(--lo)"></p>
+  <button id="go">See my results</button>
+</div>
+
+<div id="res" class="hide">
+  <h1>Your Inner Well-Being Profile</h1>
+  <div class="bar"></div>
+  <div class="card"><div id="radar" style="text-align:center"></div></div>
+  <div class="card" id="bars"></div>
+  <div class="card" id="sum"></div>
+  <div id="detail"></div>
+  <p class="note" id="status"></p>
+  <p class="note">This is a self-reflection tool, not a clinical assessment. If you are struggling or something here feels heavy, please talk to a counselor, a trusted person, or a mental health professional.</p>
+  <button class="sec" id="again">Answer again</button>
+</div>
+
+<div id="fac" class="hide">
+  <h2>Facilitator view: responses</h2>
+  <div class="card">
+    <p class="note" id="cnt">Loading…</p>
+    <div class="scroll"><table id="tbl"></table></div>
+    <button id="csv" class="sec">Download CSV</button>
+  </div>
+</div>
+</main>
+
+<script>
+// ===== EDIT HERE: dimensions and items (higher rating = healthier / stronger) =====
+const DIMS=[
+ {k:"Spirit",desc:"your sense of connection to something greater than yourself",
+  items:["I feel connected to something larger than myself (faith, values, nature, or community).","I have practices or moments that restore my inner peace."],
+  tip:"Make space for one regular practice that quiets you: prayer, reflection, a walk, or journaling."},
+ {k:"Conscience",desc:"your inner sense of right and wrong",
+  items:["I pay attention to my inner sense of right and wrong when making decisions.","I can admit when I have been wrong without being overwhelmed by it."],
+  tip:"Before big decisions, pause and ask what your values say. Talk it through with someone you trust."},
+ {k:"Identity",desc:"knowing who you are beyond your roles",
+  items:["I know who I am apart from my job, grades, or titles.","I feel secure in my worth even when I fail or am criticized."],
+  tip:"List who you are beyond your roles, such as the qualities you would keep if every title were taken away."},
+ {k:"Purpose",desc:"having meaning and direction",
+  items:["I have a clear sense of why my work and studies matter.","I look forward to contributing something meaningful in the future."],
+  tip:"Reflect on whom your work serves. Connecting daily tasks to people helps meaning grow."},
+ {k:"Moral Injury",desc:"how you carry decisions or events that conflicted with your values",
+  items:["I am able to forgive myself for past choices I regret.","I do not feel weighed down by guilt or shame about things I did, saw, or failed to prevent."],
+  tip:"Carrying guilt or shame alone is heavy. Consider speaking with a counselor, mentor, or spiritual guide."},
+ {k:"Conduct",desc:"whether your actions match your values",
+  items:["My actions are consistent with the values I say I hold.","I act with integrity even when no one is watching."],
+  tip:"Pick one value and choose one small action this week that makes it visible."},
+ {k:"Resilience",desc:"recovering and adapting after hardship",
+  items:["I recover reasonably well after setbacks or stressful events.","I ask for help when I need it."],
+  tip:"Name two people or habits that help you recover, and lean on them before you are depleted."},
+ {k:"Relationship",desc:"the quality of your bonds with others",
+  items:["I have people I trust and can be honest with.","I feel supported by those around me, and I support them in return."],
+  tip:"Reach out to one person this week for a real conversation, not just a quick check-in."}
+];
+const LABELS=["Strongly disagree","Disagree","Neutral","Agree","Strongly agree"];
+// bands per dimension (2 items, score 2-10)
+function band(s){return s>=8?{t:"Strong",c:"hi"}:s>=5?{t:"Developing",c:"mid"}:{t:"Needs attention",c:"lo"}}
+// ================================================================================
+
+const $=id=>document.getElementById(id);
+const all=[];DIMS.forEach((d,di)=>d.items.forEach((t,ii)=>all.push({di,ii,t})));
+const ans=new Array(all.length).fill(0);
+
+function build(){
+  const box=$("qs");box.innerHTML="";
+  all.forEach((q,i)=>{
+    const c=document.createElement("div");c.className="card";
+    const dm=document.createElement("div");dm.className="dim";dm.textContent=DIMS[q.di].k;
+    const p=document.createElement("p");p.className="q";p.textContent=(i+1)+". "+q.t;
+    const sc=document.createElement("div");sc.className="scale";
+    for(let v=1;v<=5;v++){
+      const l=document.createElement("label");l.textContent=v;l.title=LABELS[v-1];
+      const r=document.createElement("input");r.type="radio";r.name="q"+i;r.value=v;
+      r.onchange=()=>{ans[i]=v;[...sc.children].forEach(x=>x.classList.remove("on"));l.classList.add("on");prog()};
+      l.prepend(r);sc.appendChild(l);
+    }
+    const e=document.createElement("div");e.className="ends";e.innerHTML="<span>1 = Strongly disagree</span><span>5 = Strongly agree</span>";
+    c.append(dm,p,sc,e);box.appendChild(c);
+  });
+}
+function prog(){$("pg").style.width=(ans.filter(Boolean).length/all.length*100)+"%"}
+
+function scores(){return DIMS.map((d,di)=>all.reduce((s,q,i)=>s+(q.di===di?ans[i]:0),0))}
+
+function radar(sc){
+  const W=360,cx=180,cy=180,R=105,n=DIMS.length;
+  const pt=(i,f)=>{const a=-Math.PI/2+i*2*Math.PI/n;return[cx+R*f*Math.cos(a),cy+R*f*Math.sin(a)]};
+  let s=`<svg viewBox="0 0 ${W} 360" role="img" aria-label="Radar chart of dimension scores">`;
+  [.25,.5,.75,1].forEach(f=>{s+=`<polygon points="${DIMS.map((_,i)=>pt(i,f).join(",")).join(" ")}" fill="none" stroke="var(--bd)"/>`});
+  DIMS.forEach((d,i)=>{const[x,y]=pt(i,1);s+=`<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="var(--bd)"/>`;
+    const[lx,ly]=pt(i,1.24);s+=`<text x="${lx}" y="${ly}" font-size="11" fill="var(--tx)" text-anchor="middle" dominant-baseline="middle">${d.k}</text>`});
+  s+=`<polygon points="${sc.map((v,i)=>pt(i,(v-0)/10).join(",")).join(" ")}" fill="var(--ac)" fill-opacity=".25" stroke="var(--ac)" stroke-width="2"/>`;
+  sc.forEach((v,i)=>{const[x,y]=pt(i,v/10);s+=`<circle cx="${x}" cy="${y}" r="3.5" fill="var(--ac)"/>`});
+  return s+"</svg>";
+}
+
+function show(sc){
+  $("intro").classList.add("hide");$("res").classList.remove("hide");
+  $("radar").innerHTML=radar(sc);
+  $("bars").innerHTML="<b>Score by dimension</b> <span class='note'>(2 to 10)</span>"+DIMS.map((d,i)=>{const b=band(sc[i]);
+    return `<div class="row"><div class="n">${d.k}</div><div class="t"><i class="${b.c}" style="width:${sc[i]*10}%"></i></div><div class="s">${sc[i]}/10</div></div>`}).join("");
+  const idx=sc.map((v,i)=>i), hi=Math.max(...sc), lo=Math.min(...sc);
+  const top=idx.filter(i=>sc[i]===hi).map(i=>DIMS[i].k), low=idx.filter(i=>sc[i]===lo).map(i=>DIMS[i].k);
+  const tot=sc.reduce((a,b)=>a+b,0);
+  $("sum").innerHTML=`<b>Overall: ${tot}/80</b><p>Your strongest area${top.length>1?"s are":" is"} <b>${top.join(", ")}</b>. `+
+    (hi===lo?"Your scores are balanced across all dimensions.":`The area to nurture most right now ${low.length>1?"are":"is"} <b>${low.join(", ")}</b>.`)+"</p>";
+  $("detail").innerHTML=DIMS.map((d,i)=>{const b=band(sc[i]);
+    return `<div class="card"><div class="dim">${d.k}</div><p style="margin:.3em 0"><span class="pill ${b.c}">${b.t}</span> <span class="note">${sc[i]}/10 · ${d.desc}</span></p><p style="margin:.3em 0">${sc[i]>=8?"This looks like a source of strength for you. Keep what is working.":d.tip}</p></div>`}).join("");
+  window.scrollTo(0,0);
+}
+
+let myId=null;
+async function save(sc){
+  const st=$("status");
+  try{
+    const db=await claude.use("db");
+    if(!db){st.textContent="Your results are shown above. Sign in to claude.ai to also send them to the facilitator.";return}
+    const u=await claude.use("user");
+    myId=u?await u.id():null;
+    if(!myId){st.textContent="Your results were not sent (could not identify you).";return}
+    const rec={name:$("nm").value.trim().slice(0,60),at:new Date().toISOString(),total:sc.reduce((a,b)=>a+b,0)};
+    DIMS.forEach((d,i)=>rec[d.k]=sc[i]);rec.answers=ans.slice();
+    await db.collection("responses").doc(myId).set(rec);
+    st.textContent="Your responses were submitted to the facilitator. Thank you!";
+  }catch(e){st.textContent="Your results are shown above, but they could not be sent right now."}
+}
+
+$("go").onclick=()=>{
+  const miss=ans.findIndex(a=>!a);
+  if(miss>=0){$("err").textContent="Please answer item "+(miss+1)+" before continuing.";
+    document.getElementsByClassName("card")[miss+1].scrollIntoView({behavior:"smooth",block:"center"});return}
+  $("err").textContent="";const sc=scores();show(sc);save(sc);
+};
+$("again").onclick=()=>{ans.fill(0);build();prog();$("res").classList.add("hide");$("intro").classList.remove("hide");window.scrollTo(0,0)};
+
+// Facilitator view (owner only)
+async function facilitator(){
+  try{
+    const user=await claude.use("user");
+    if(!user||!user.isOwner())return;
+    const db=await claude.use("db");if(!db)return;
+    $("fac").classList.remove("hide");
+    let rows=[];
+    db.collection("responses").onSnapshot(snap=>{
+      rows=snap.docs.map(d=>d.data()||{});
+      $("cnt").textContent=rows.length+" response"+(rows.length===1?"":"s");
+      const h="<tr><th>Name/ID</th>"+DIMS.map(d=>"<th>"+d.k+"</th>").join("")+"<th>Total</th></tr>";
+      const avg=rows.length?"<tr><td><b>Class average</b></td>"+DIMS.map(d=>"<td><b>"+(rows.reduce((a,r)=>a+(r[d.k]||0),0)/rows.length).toFixed(1)+"</b></td>").join("")+"<td><b>"+(rows.reduce((a,r)=>a+(r.total||0),0)/rows.length).toFixed(1)+"</b></td></tr>":"";
+      const body=rows.map(r=>{const tr=document.createElement("tr");const td=document.createElement("td");td.textContent=r.name||"(anonymous)";tr.appendChild(td);
+        DIMS.forEach(d=>{const c=document.createElement("td");c.textContent=r[d.k]??"";tr.appendChild(c)});
+        const t=document.createElement("td");t.textContent=r.total??"";tr.appendChild(t);return tr.outerHTML}).join("");
+      $("tbl").innerHTML=h+avg+body;
+    },()=>{$("cnt").textContent="Could not load responses."});
+    $("csv").onclick=async()=>{
+      const q=s=>'"'+String(s??"").replace(/"/g,'""')+'"';
+      const lines=[["Name/ID","Submitted",...DIMS.map(d=>d.k),"Total"].map(q).join(",")];
+      rows.forEach(r=>lines.push([r.name,r.at,...DIMS.map(d=>r[d.k]),r.total].map(q).join(",")));
+      try{const dl=await claude.use("downloads");if(dl)await dl.save({filename:"inner-wellbeing-responses.csv",data:lines.join("\n")})}catch(e){}
+    };
+  }catch(e){}
+}
+build();facilitator();
+</script>
+</body>
+</html>
